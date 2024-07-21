@@ -1,10 +1,16 @@
 from Lexer.lexer import Lexer  
 
 def main():
-    codigo_fonte = """
-    x = 42;
-    y = 3;
-    z = x + y;
+    codigo_fonte = """"
+    main {
+        x = 42;
+        y = 3;
+        z = x + y;
+        x == y
+        x != y
+        (x < y)
+        {}
+    }
     """
 
     lexer = Lexer(codigo_fonte)
