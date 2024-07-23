@@ -8,111 +8,140 @@ class Lexer:
         self.inicio = 0
         self.linha_atual = 1
 
+        self.palavras_reservadas = {
+            'main': 'MAIN',
+            'end': 'END',
+            'func': 'FUNC',
+            'proc': 'PROC',
+            'call': 'CALL',
+            'int': 'INT',
+            'bool': 'BOOL',
+            'True': 'BOOLEAN',
+            'False': 'BOOLEAN',
+            'return': 'RETURN',
+            'if': 'IF',
+            'endif': 'ENDIF',
+            'else': 'ELSE',
+            'endelse': 'ENDELSE',
+            'while': 'WHILE',
+            'endwhile': 'ENDWHILE',
+            'print': 'PRINT',
+            'break': 'BREAK',
+            'continue': 'CONTINUE'
+        }
+        
+        self.operadores_booleanos = {
+            '=': 'ATB',
+            '!': 'DIFF',
+            '<': 'LESS',
+            '>': 'GREATER'
+        }
+        
+        self.operadores_booleanos_completo = {
+            '=': 'EQUAL',
+            '!': 'DIFF',
+            '<': 'LESSEQUAL',
+            '>': 'GREATEREQUAL'
+        }
+        
+        self.operadores_aritmeticos = {
+            '+': 'ADD',
+            '-': 'SUB',
+            '*': 'MULT',
+            '/': 'DIV',
+            '%': 'MOD'
+        }
+        
+        self.delimitadores = {
+            '(': 'LPAREN',
+            ')': 'RPAREN',
+            '{': 'LBRACE',
+            '}': 'RBRACE',
+            ',': 'COMMA',
+            ';': 'SEMICOLON'
+        }
+
     def lookAhead(self):
-        if self.posicao_atual < len(self.codigo_fonte):
-            return self.codigo_fonte[self.posicao_atual]
-        else:
-            return "\0"
+        return self.codigo_fonte[self.posicao_atual] if self.posicao_atual < len(self.codigo_fonte) else "\0"
+        
+    def adicionar_token(self, tipo, lexema=None, linha=None):
+        lexema = lexema if lexema else self.codigo_fonte[self.posicao_atual]
+        linha = self.linha_atual if not linha else linha
+        self.tokens.append(Token(tipo, lexema, linha))
 
     def analisar(self):
         while self.posicao_atual < len(self.codigo_fonte):
             self.inicio = self.posicao_atual
 
-            if self.codigo_fonte[self.posicao_atual] in [' ', '\t']:
+            char_atual = self.codigo_fonte[self.posicao_atual]
+
+            if char_atual in [' ', '\t']:
                 self.posicao_atual += 1
                 continue
 
-            elif self.codigo_fonte[self.posicao_atual] == '\n':
+            elif char_atual == '\n':
                 self.linha_atual += 1
                 self.posicao_atual += 1
                 continue
 
-            elif self.codigo_fonte[self.posicao_atual].isdigit():
-                while self.lookAhead().isdigit():
-                    self.posicao_atual += 1
-                self.tokens.append(Token("NUM", self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual))
+            elif char_atual.isdigit():
+                self.analisar_numero()
 
-            elif self.codigo_fonte[self.posicao_atual].isalpha():
-                while self.lookAhead().isalnum():
-                    self.posicao_atual += 1
-                self.tokens.append(Token("ID", self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual))
+            elif char_atual.isalpha():
+                self.analisar_identificador()
 
-            elif self.codigo_fonte[self.posicao_atual] == '=' or self.codigo_fonte[self.posicao_atual] == '!' or self.codigo_fonte[self.posicao_atual] == '<' or self.codigo_fonte[self.posicao_atual] == '>':
-                token = self.codigo_fonte[self.posicao_atual]
-                self.posicao_atual += 1
-                self.tokens.append(Token(self.op_boolean(token), self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual))
+            elif char_atual in self.operadores_booleanos:
+                self.analisar_op_booleano()
 
-            elif self.codigo_fonte[self.posicao_atual] == '+' or self.codigo_fonte[self.posicao_atual] == '-' or self.codigo_fonte[self.posicao_atual] == '*' or self.codigo_fonte[self.posicao_atual] == '/' or self.codigo_fonte[self.posicao_atual] == '%':
-                token = self.codigo_fonte[self.posicao_atual]
-                self.posicao_atual += 1
-                self.tokens.append(Token(self.op_arithmetic(token), self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual))
+            elif char_atual in self.operadores_aritmeticos:
+                self.analisar_op_aritmetico()
 
-            elif self.codigo_fonte[self.posicao_atual] == '(' or self.codigo_fonte[self.posicao_atual] == ')' or self.codigo_fonte[self.posicao_atual] == '{' or self.codigo_fonte[self.posicao_atual] == '}':
-                token = self.codigo_fonte[self.posicao_atual]
-                self.posicao_atual += 1
-                self.tokens.append(Token(self.delimitadores(token), self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual))
-
-            elif self.codigo_fonte[self.posicao_atual] == ',':
-                self.posicao_atual += 1
-                self.tokens.append(Token('COMMA', self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual))
-
-            elif self.codigo_fonte[self.posicao_atual] == ';':
-                self.posicao_atual += 1
-                self.tokens.append(Token('SEMICOLON', self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual))
-
+            elif char_atual in self.delimitadores:
+                self.analisar_delimitador()
 
             else:
-                print(f"Caractere inválido na linha {self.linha_atual}: {self.codigo_fonte[self.posicao_atual]}")
+                print(f"Caractere inválido na linha {self.linha_atual}: {char_atual}")
                 self.posicao_atual += 1
 
         return self.tokens
 
-
-    def op_boolean(self, token):
-        if token == '=':
-            if self.lookAhead() == '=':
-                self.posicao_atual += 1
-                return 'EQUAL'
-            else:
-                return 'ATB'
-            
-        elif token == '!':
-            if self.lookAhead() == '=':
-                self.posicao_atual += 1
-                return 'DIFF'
-
-        elif token == '<':
-            if self.lookAhead() == '=':
-                self.posicao_atual += 1
-                return 'LESSEQUAL'
-            else:
-                return 'LESS'
-        
-        elif token == '>':
-            if self.lookAhead() == '=':
-                self.posicao_atual += 1
-                return 'GREATEREQUAL'
-            else:
-                return 'GREATER'
+    def analisar_numero(self):
+        while self.lookAhead().isdigit():
+            self.posicao_atual += 1
+        self.adicionar_token("NUM", self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual)
     
-    def op_arithmetic(self, token):
-        if token == '+':
-            return 'ADD'
-        elif token == '-':
-            return 'SUB'
-        elif token == '*':
-            return 'MULT'
-        elif token == '/':
-            return 'DIV'
-        elif token == '%':
-            return 'MOD'
-        
-    def delimitadores(self, token): 
-        if token == '(':
-            return 'LPAREN'
-        elif token == ')':
-            return 'RPAREN'
-        elif token == '{':
-            return 'LBRACE'
-        elif token == '}':
-            return 'RBRACE'
+    def analisar_identificador(self):
+        while self.lookAhead().isalnum():
+            self.posicao_atual += 1
+        lexema = self.codigo_fonte[self.inicio:self.posicao_atual]
+        if lexema in self.palavras_reservadas:
+            tipo = self.palavras_reservadas[lexema]
+        else:
+            tipo = "ID"
+        self.adicionar_token(tipo, lexema, self.linha_atual)
+    
+    def analisar_op_booleano(self):
+        token = self.codigo_fonte[self.posicao_atual]
+        self.posicao_atual += 1
+        if token in self.operadores_booleanos_completo:
+            if self.lookAhead() == '=':
+                self.posicao_atual += 1
+                tipo = self.operadores_booleanos_completo[token]
+            else:
+                tipo = self.operadores_booleanos[token]
+        else:
+            tipo = self.operadores_booleanos[token]
+        self.posicao_atual += 1
+        self.adicionar_token(tipo, self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual)
+
+    def analisar_op_aritmetico(self):
+        token = self.codigo_fonte[self.posicao_atual]
+        tipo = self.operadores_aritmeticos[token]
+        self.posicao_atual += 1
+        self.adicionar_token(tipo, self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual)
+    
+    def analisar_delimitador(self):
+        token = self.codigo_fonte[self.posicao_atual]
+        tipo = self.delimitadores[token]
+        self.posicao_atual += 1
+        self.adicionar_token(tipo, self.codigo_fonte[self.inicio:self.posicao_atual], self.linha_atual)
