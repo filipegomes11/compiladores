@@ -4,7 +4,28 @@ from Parser.Parser import Parser
 def main():
     codigo_fonte = """"
     main {
-        int oi = 10;
+        int num1 = 0;
+        b = True;
+        num1 = num2;
+        int num3 = call func soma();
+
+        call func func0b();
+        call func func1b(a);
+        call func func2b(true, b);
+
+        call proc proc0();
+        call proc proc1(x);
+        call proc proc2(a, b, c);
+
+        func int soma(int a, int b) {
+            int soma = a + b;
+            return soma;
+        }
+
+        proc proc0() {
+            int a = 0;
+        }
+
     } end
     """
 
