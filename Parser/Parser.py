@@ -9,10 +9,10 @@ class Parser:
         self.token_atual = self.tokens[self.index_token]
     
     def verificar_e_avancar(self, tipo_esperado):
-            if self.token_atual.tipo == tipo_esperado:
-                self.avancar()
-                return True
-            return False
+        if self.token_atual.tipo == tipo_esperado:
+            self.avancar()
+            return True
+        return False
 
     def parse(self):
         return self.programa()
@@ -60,7 +60,13 @@ class Parser:
                 raise Exception(f"Erro de sintaxe: Esperado 'FUNC' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
 
         if self.verificar_e_avancar('PRINT'):
-            self.print()
+            self.print_statement()
+
+        if self.verificar_e_avancar('IF'):
+            self.if_stmt()
+
+        if self.verificar_e_avancar('ELSE'):
+            self.else_part()            
         
         if self.verificar_e_avancar('WHILE'):
             self.while_()
@@ -72,16 +78,79 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Não esperado'{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
         
+<<<<<<< HEAD
     def declaration_var(self):
         if self.verificar_e_avancar('ID'):
                 if self.verificar_e_avancar('ATB'):
                     self.end_var()
+=======
+    def if_stmt(self):
+        if self.verificar_e_avancar('IF'):
+            if self.verificar_e_avancar('LPAREN'):
+                self.expression()
+                if self.verificar_e_avancar('RPAREN'):
+                    if self.verificar_e_avancar('LBRACE'):
+                        self.block()
+                        if self.verificar_e_avancar('RBRACE'):
+                            self.else_part()
+                            return
+        raise Exception(f"Erro de sintaxe no if statement na linha {self.token_atual.linha}.")
+
+    def else_part(self):
+        if self.verificar_e_avancar('ELSE'):
+            if self.verificar_e_avancar('LBRACE'):
+                self.block()
+                if self.verificar_e_avancar('RBRACE'):
+                    return
+        else:
+            return        
+    
+    def while_(self):
+        if self.verificar_e_avancar('WHILE'):
+            if self.verificar_e_avancar('LPAREN'):
+                self.expression()
+                if self.verificar_e_avancar('RPAREN'):
+                    if self.verificar_e_avancar('LBRACE'):
+                        self.block()
+                        if self.verificar_e_avancar('RBRACE'):
+                            return
+        raise Exception(f"Erro de sintaxe no while statement na linha {self.token_atual.linha}.")
+    
+    def print_statement(self):
+        if self.verificar_e_avancar('PRINT'):
+            if self.verificar_e_avancar('LPAREN'):
+                self.params_print()
+                if self.verificar_e_avancar('RPAREN'):
+>>>>>>> e19df48f12807a06ab06c10a545662e8dde7c9ba
                     if self.verificar_e_avancar('SEMICOLON'):
-                        return True
+                        return
                     else:
                         raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
                 else:
-                    raise Exception(f"Erro de sintaxe: Esperado '=' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}..")
+                    raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+            else:
+                raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+        else:
+            raise Exception(f"Erro de sintaxe: Esperado 'PRINT' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+
+    def params_print(self):
+        if self.verificar_e_avancar('ID') or self.verificar_e_avancar('NUM') or self.verificar_e_avancar('BOOLEAN'):
+            while self.verificar_e_avancar('COMMA'):
+                if not (self.verificar_e_avancar('ID') or self.verificar_e_avancar('NUM') or self.verificar_e_avancar('BOOLEAN')):
+                    raise Exception(f"Erro de sintaxe: Esperado 'ID', 'NUM' ou 'BOOLEAN' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+        else:
+            raise Exception(f"Erro de sintaxe: Esperado 'ID', 'NUM' ou 'BOOLEAN' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+
+    def declaration_var(self):
+        if self.verificar_e_avancar('ID'):
+            if self.verificar_e_avancar('ATB'):
+                self.end_var()
+                if self.verificar_e_avancar('SEMICOLON'):
+                    return True
+                else:
+                    raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+            else:
+                raise Exception(f"Erro de sintaxe: Esperado '=' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}..")
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}..")
     
