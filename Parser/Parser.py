@@ -9,10 +9,10 @@ class Parser:
         self.token_atual = self.tokens[self.index_token]
     
     def verificar_e_avancar(self, tipo_esperado):
-            if self.token_atual.tipo == tipo_esperado:
-                self.avancar()
-                return True
-            return False
+        if self.token_atual.tipo == tipo_esperado:
+            self.avancar()
+            return True
+        return False
 
     def parse(self):
         return self.programa()
