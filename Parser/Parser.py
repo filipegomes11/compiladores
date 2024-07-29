@@ -92,6 +92,17 @@ class Parser:
                     return
         else:
             return        
+    
+    def while_(self):
+        if self.verificar_e_avancar('WHILE'):
+            if self.verificar_e_avancar('LPAREN'):
+                self.expression()
+                if self.verificar_e_avancar('RPAREN'):
+                    if self.verificar_e_avancar('LBRACE'):
+                        self.block()
+                        if self.verificar_e_avancar('RBRACE'):
+                            return
+        raise Exception(f"Erro de sintaxe no while statement na linha {self.token_atual.linha}.")
        
     def declaration_var(self):
         if self.verificar_e_avancar('ID'):
