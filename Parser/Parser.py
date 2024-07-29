@@ -103,7 +103,31 @@ class Parser:
                         if self.verificar_e_avancar('RBRACE'):
                             return
         raise Exception(f"Erro de sintaxe no while statement na linha {self.token_atual.linha}.")
-       
+    
+    def print_statement(self):
+        if self.verificar_e_avancar('PRINT'):
+            if self.verificar_e_avancar('LPAREN'):
+                self.params_print()
+                if self.verificar_e_avancar('RPAREN'):
+                    if self.verificar_e_avancar('SEMICOLON'):
+                        return
+                    else:
+                        raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+                else:
+                    raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+            else:
+                raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+        else:
+            raise Exception(f"Erro de sintaxe: Esperado 'PRINT' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+
+    def params_print(self):
+        if self.verificar_e_avancar('ID') or self.verificar_e_avancar('NUM') or self.verificar_e_avancar('BOOLEAN'):
+            while self.verificar_e_avancar('COMMA'):
+                if not (self.verificar_e_avancar('ID') or self.verificar_e_avancar('NUM') or self.verificar_e_avancar('BOOLEAN')):
+                    raise Exception(f"Erro de sintaxe: Esperado 'ID', 'NUM' ou 'BOOLEAN' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+        else:
+            raise Exception(f"Erro de sintaxe: Esperado 'ID', 'NUM' ou 'BOOLEAN' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+
     def declaration_var(self):
         if self.verificar_e_avancar('ID'):
             if self.verificar_e_avancar('ATB'):
