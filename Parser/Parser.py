@@ -83,7 +83,15 @@ class Parser:
                             self.else_part()
                             return
         raise Exception(f"Erro de sintaxe no if statement na linha {self.token_atual.linha}.")
-            
+
+    def else_part(self):
+        if self.verificar_e_avancar('ELSE'):
+            if self.verificar_e_avancar('LBRACE'):
+                self.block()
+                if self.verificar_e_avancar('RBRACE'):
+                    return
+        else:
+            return        
        
     def declaration_var(self):
         if self.verificar_e_avancar('ID'):
