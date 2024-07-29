@@ -4,9 +4,11 @@ from Parser.Parser import Parser
 def main():
     codigo_fonte = """"
     main {
+        int a = 1 + 2 + 3 * 3 / 1;
         int num1 = 0;
         b = True;
         num1 = num2;
+        
         int num3 = call func soma();
 
         call func func0b();

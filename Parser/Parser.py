@@ -72,9 +72,6 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Não esperado'{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
         
-
-       
-
     def declaration_var(self):
         if self.verificar_e_avancar('ID'):
                 if self.verificar_e_avancar('ATB'):
@@ -308,7 +305,7 @@ class Parser:
             
     def call_op(self):
         if self.verificar_e_avancar('ID') or self.verificar_e_avancar('NUM'):
-            if self.verificar_e_avancar('ADD') or self.verificar_e_avancar('SUB') or self.verificar_e_avancar('MUL') or self.verificar_e_avancar('DIV'):
+            if self.verificar_e_avancar('ADD') or self.verificar_e_avancar('SUB') or self.verificar_e_avancar('MULT') or self.verificar_e_avancar('DIV'):
                 self.call_op()
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID' ou 'NUM' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.") 
