@@ -30,6 +30,12 @@ def main():
             int d = 11;
         }
 
+        print(c);
+
+        while (c == 20) {
+            int e = 10;
+        }
+
         proc proc0() {
             int a = 0;
         }
