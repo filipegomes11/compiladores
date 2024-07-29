@@ -72,9 +72,19 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Não esperado'{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
         
-
+    def if_stmt(self):
+        if self.verificar_e_avancar('IF'):
+            if self.verificar_e_avancar('LPAREN'):
+                self.expression()
+                if self.verificar_e_avancar('RPAREN'):
+                    if self.verificar_e_avancar('LBRACE'):
+                        self.block()
+                        if self.verificar_e_avancar('RBRACE'):
+                            self.else_part()
+                            return
+        raise Exception(f"Erro de sintaxe no if statement na linha {self.token_atual.linha}.")
+            
        
-
     def declaration_var(self):
         if self.verificar_e_avancar('ID'):
             if self.verificar_e_avancar('ATB'):
