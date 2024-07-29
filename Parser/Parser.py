@@ -77,14 +77,14 @@ class Parser:
 
     def declaration_var(self):
         if self.verificar_e_avancar('ID'):
-                if self.verificar_e_avancar('ATB'):
-                    self.end_var()
-                    if self.verificar_e_avancar('SEMICOLON'):
-                        return True
-                    else:
-                        raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+            if self.verificar_e_avancar('ATB'):
+                self.end_var()
+                if self.verificar_e_avancar('SEMICOLON'):
+                    return True
                 else:
-                    raise Exception(f"Erro de sintaxe: Esperado '=' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}..")
+                    raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+            else:
+                raise Exception(f"Erro de sintaxe: Esperado '=' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}..")
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}..")
     
