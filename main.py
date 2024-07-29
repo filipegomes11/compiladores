@@ -24,6 +24,12 @@ def main():
             return soma;
         }
 
+        if (a == b) {
+            int c = 10;
+        } else {
+            int d = 11;
+        }
+
         proc proc0() {
             int a = 0;
         }

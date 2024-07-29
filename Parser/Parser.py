@@ -61,50 +61,51 @@ class Parser:
 
         if self.verificar_e_avancar('PRINT'):
             self.print_statement()
+            return True
 
         if self.verificar_e_avancar('IF'):
             self.if_stmt()
-
-        if self.verificar_e_avancar('ELSE'):
-            self.else_part()            
+            return True
         
         if self.verificar_e_avancar('WHILE'):
             self.while_()
+            return True
         
-
         if self.verificar_e_avancar('ID'):
             self.call_var()
+            return True
 
         else:
             raise Exception(f"Erro de sintaxe: Não esperado'{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
         
-<<<<<<< HEAD
-    def declaration_var(self):
-        if self.verificar_e_avancar('ID'):
-                if self.verificar_e_avancar('ATB'):
-                    self.end_var()
-=======
     def if_stmt(self):
-        if self.verificar_e_avancar('IF'):
-            if self.verificar_e_avancar('LPAREN'):
-                self.expression()
-                if self.verificar_e_avancar('RPAREN'):
-                    if self.verificar_e_avancar('LBRACE'):
-                        self.block()
-                        if self.verificar_e_avancar('RBRACE'):
+        if self.verificar_e_avancar('LPAREN'):
+            self.expression()
+            if self.verificar_e_avancar('RPAREN'):
+                if self.verificar_e_avancar('LBRACE'):
+                    self.block()
+                    if self.verificar_e_avancar('RBRACE'):
+                        if self.verificar_e_avancar('ELSE'):
                             self.else_part()
-                            return
-        raise Exception(f"Erro de sintaxe no if statement na linha {self.token_atual.linha}.")
+                    else:
+                        raise Exception(f"Erro de sintaxe: Esperado ""}"" ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+                else:
+                    raise Exception(f"Erro de sintaxe: Esperado ""{"" ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+            else:
+                raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+        else:
+            raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
 
     def else_part(self):
-        if self.verificar_e_avancar('ELSE'):
-            if self.verificar_e_avancar('LBRACE'):
-                self.block()
-                if self.verificar_e_avancar('RBRACE'):
-                    return
+        if self.verificar_e_avancar('LBRACE'):
+            self.block()
+            if self.verificar_e_avancar('RBRACE'):
+                return True
+            else:
+                raise Exception(f"Erro de sintaxe: Esperado '}}' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
         else:
-            return        
-    
+            raise Exception(f"Erro de sintaxe: Esperado '{{' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+            
     def while_(self):
         if self.verificar_e_avancar('WHILE'):
             if self.verificar_e_avancar('LPAREN'):
@@ -121,7 +122,6 @@ class Parser:
             if self.verificar_e_avancar('LPAREN'):
                 self.params_print()
                 if self.verificar_e_avancar('RPAREN'):
->>>>>>> e19df48f12807a06ab06c10a545662e8dde7c9ba
                     if self.verificar_e_avancar('SEMICOLON'):
                         return
                     else:
