@@ -60,7 +60,13 @@ class Parser:
                 raise Exception(f"Erro de sintaxe: Esperado 'FUNC' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
 
         if self.verificar_e_avancar('PRINT'):
-            self.print()
+            self.print_statement()
+
+        if self.verificar_e_avancar('IF'):
+            self.if_stmt()
+
+        if self.verificar_e_avancar('ELSE'):
+            self.else_part()            
         
         if self.verificar_e_avancar('WHILE'):
             self.while_()
