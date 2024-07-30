@@ -74,6 +74,10 @@ class Parser:
         if self.verificar_e_avancar('ID'):
             self.call_var()
             return True
+        
+        if self.token_atual.tipo == 'BREAK' or self.token_atual.tipo == 'CONTINUE':
+            self.unconditional()
+            return True
 
         else:
             raise Exception(f"Erro de sintaxe: Não esperado'{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
@@ -123,6 +127,20 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
     
+    def unconditional(self):
+        if self.verificar_e_avancar('CONTINUE'):
+            if self.verificar_e_avancar('SEMICOLON'):
+                return True
+            else:
+                raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+        if self.verificar_e_avancar('BREAK'):
+            if self.verificar_e_avancar('SEMICOLON'):
+                return True
+            else:
+                raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+        else:
+            raise Exception(f"Erro de sintaxe: Esperado 'CONTINUE' ou 'BREAK' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
+
     def print_statement(self):
         if self.verificar_e_avancar('LPAREN'):
             self.params_print()
@@ -141,8 +159,10 @@ class Parser:
             if self.verificar_e_avancar('ADD') or self.verificar_e_avancar('SUB') or self.verificar_e_avancar('MULT') or self.verificar_e_avancar('DIV'):
                 self.call_op()
                 return True
-            else:
+            if self.verificar_e_avancar('COMMA'):
+                self.params_print()
                 return True
+            return True
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID', 'NUM' ou 'BOOLEAN' ao invés de '{self.token_atual.lexema}' na linha {self.token_atual.linha}.")
 
