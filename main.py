@@ -9,11 +9,11 @@ def main():
     lexer = Lexer(codigo_fonte)
     tokens = lexer.analisar()
 
-    print(tokens)
+    parser = Parser(tokens)
+    print(parser.tokens)
+    parser.parse()
 
-    parser = Parser(tokens).parse()
-
-    print(parser)
+    
 
 if __name__ == "__main__":
     main()

@@ -20,11 +20,8 @@ class Lexer:
             'False': 'BOOLEAN',
             'return': 'RETURN',
             'if': 'IF',
-            'endif': 'ENDIF',
             'else': 'ELSE',
-            'endelse': 'ENDELSE',
             'while': 'WHILE',
-            'endwhile': 'ENDWHILE',
             'print': 'PRINT',
             'break': 'BREAK',
             'continue': 'CONTINUE'
