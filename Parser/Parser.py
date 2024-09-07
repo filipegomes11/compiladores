@@ -37,7 +37,11 @@ class Parser:
             return temp
             
         if self.token_atual().tipo == 'FUNC':
-            self.declaration_func()
+            temp = []
+            temp.append(self.indexEscopoAtual)
+            temp.append(self.token_atual().linha)
+            temp.append(self.token_atual().tipo)
+            self.declaration_func(temp)
             return True
 
         if self.token_atual().tipo == 'PROC':
@@ -218,28 +222,43 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
     
-    def declaration_func(self):
+    def declaration_func(self, temp):
         self.index_token += 1
         if self.token_atual().tipo == 'INT' or self.token_atual().tipo == 'BOOL':
+            temp.append(self.token_atual().tipo)
             self.index_token += 1
             if self.token_atual().tipo == 'ID':
+                temp.append(self.token_atual().lexema)
                 self.index_token += 1
                 if self.token_atual().tipo == 'LPAREN':
+                    tempParen = []
                     self.index_token += 1
                     if self.token_atual().tipo == 'INT' or self.token_atual().tipo == 'BOOL':
+                        tempParametroAtual = []
+                        tempParametroAtual.append(self.token_atual().tipo)
                         self.index_token += 1
                         if self.token_atual().tipo == 'ID' or self.token_atual().lexema == 'True' or self.token_atual().lexema == 'False':
+                            tempParametroAtual.append(self.token_atual().lexema)
+                            tempParen.append(tempParametroAtual)
                             self.index_token += 1
                             if self.token_atual().tipo == 'COMMA':
-                                self.params()
+                                tempParen.append(self.params(tempParen))
+                                tempParen.pop()
+                                temp.append(tempParen)
                                 if self.token_atual().tipo == 'RPAREN':
                                     self.index_token += 1
                                     if self.token_atual().tipo == 'LBRACE':
                                         self.index_token += 1
+                                        tempBlock = []
                                         while self.token_atual().tipo != 'RETURN':
-                                            self.block()
+                                            tempBlock.append(self.block())
+                                            temp.append(tempBlock)
+                                            tempReturn = []
                                         if self.token_atual().tipo == 'RETURN':
-                                            self.return_()
+                                            tempReturnParams = []
+                                            tempReturnParams = self.return_(tempReturnParams)
+                                            tempReturn.append(tempReturnParams)
+                                            temp.append(tempReturn)
                                             if self.token_atual().tipo == 'RBRACE':
                                                 self.index_token += 1
                                                 return 
@@ -368,13 +387,14 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado '=' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
-    def return_(self):
+    def return_(self, tempReturnParams):
         self.index_token += 1
         if self.token_atual().tipo == 'ID' or self.token_atual().tipo == 'NUM' or self.token_atual().tipo == 'BOOLEAN':
+            tempReturnParams.append(self.token_atual().lexema)
             self.index_token += 1
             if self.token_atual().tipo == 'SEMICOLON':
                 self.index_token += 1
-                return
+                return tempReturnParams
             else:
                 raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
@@ -391,24 +411,29 @@ class Parser:
 
         if self.token_atual().tipo == 'BOOLEAN':
             if self.token_atual().lexema == 'True' or self.token_atual().lexema == 'False':
+                tempEndVar.append(self.token_atual().lexema)
                 self.index_token += 1
-                return True
+                return
             else:
                 raise Exception(f"Erro de sintaxe: Esperado 'True' ou 'False' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
             
         if self.token_atual().tipo == 'NUM':
+            tempEndVar.append(self.token_atual().lexema)
             self.index_token += 1
             if self.token_atual().tipo == 'ADD' or self.token_atual().tipo == 'SUB' or self.token_atual().tipo == 'MUL'or self.token_atual().tipo == 'DIV':
-                self.call_op()
-                return True
+                tempEndVar.append(self.token_atual().lexema)
+                self.call_op(tempEndVar)
+                return
             else:
-                return False
+                return
         
         if self.token_atual().tipo == 'ID':
+            tempEndVar.append(self.token_atual().lexema)
             self.index_token += 1
             if self.token_atual().tipo == 'ADD' or self.token_atual().tipo == 'SUB' or self.token_atual().tipo == 'MUL' or self.token_atual().tipo == 'DIV':
-                self.call_op()
-                return True
+                tempEndVar.append(self.token_atual().lexema)
+                self.call_op(tempEndVar)
+                return 
             else:
                 raise Exception(f"Erro de sintaxe: Esperado número ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
         else:
@@ -501,12 +526,14 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID' ou 'NUM' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
             
-    def call_op(self):
+    def call_op(self, tempEndVar):
         self.index_token += 1
         if self.token_atual().tipo == 'ID' or self.token_atual().tipo == 'NUM':
+            tempEndVar.append(self.token_atual().lexema)
             self.index_token += 1
             if self.token_atual().tipo == 'ADD' or self.token_atual().tipo == 'SUB' or self.token_atual().tipo == 'MULT' or self.token_atual().tipo == 'DIV':
-                self.call_op()
+                tempEndVar.append(self.token_atual().lexema)
+                self.call_op(tempEndVar)
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID' ou 'NUM' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.") 
         
@@ -524,18 +551,23 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID', 'TRUE' ou 'FALSE' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                 
-    def params(self):
+    def params(self, tempParen):
         self.index_token += 1
         if self.token_atual().tipo == 'INT' or self.token_atual().tipo == 'BOOL':
+            tempParametroAtual = []
+            tempParametroAtual.append(self.indexEscopoAtual + 1)
+            tempParametroAtual.append(self.token_atual().tipo)
             self.index_token += 1
             if self.token_atual().tipo == 'ID' or self.token_atual().lexema == 'True' or self.token_atual().lexema == 'False':
+                tempParametroAtual.append(self.token_atual().lexema)
+                tempParen.append(tempParametroAtual)
                 self.index_token += 1
                 if self.token_atual().tipo == 'COMMA':
-                    self.params()
+                    self.params(tempParen)
                 elif self.token_atual().tipo == 'ID' or self.token_atual().lexema == 'True' or self.token_atual().lexema == 'False':
                     raise Exception(f"Erro de sintaxe: Esperado ',' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                 else:
-                    return True
+                    return tempParen
             else:
                 raise Exception(f"Erro de sintaxe: Esperado 'ID', 'TRUE' ou 'FALSE' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
         else:
