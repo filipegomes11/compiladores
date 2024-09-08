@@ -42,27 +42,39 @@ class Parser:
             temp.append(self.token_atual().linha)
             temp.append(self.token_atual().tipo)
             self.declaration_func(temp)
-            return True
+            return temp
 
         if self.token_atual().tipo == 'PROC':
-            self.declaration_proc()
+            temp = []
+            temp.append(self.indexEscopoAtual)
+            temp.append(self.token_atual().linha)
+            temp.append(self.token_atual().tipo)
+            temp = self.declaration_proc(temp)
+            self.tabelaDeSimbolos.append(temp)
             return True
 
         if self.token_atual().tipo == 'CALL':
+            temp = []
+            temp.append(self.indexEscopoAtual)
+            temp.append(self.token_atual().linha)
+            temp.append(self.token_atual().tipo)
             self.index_token += 1
             if self.token_atual().tipo == 'PROC':
-                self.call_proc()
+                temp.append(self.token_atual().tipo)
+                temp = self.call_proc(temp)
                 if self.token_atual().tipo == 'SEMICOLON':
                     self.index_token += 1
-                    return
+                    self.tabelaDeSimbolos.append(temp)
+                    return temp
                 else:
                     raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
             
             elif self.token_atual().tipo == 'FUNC':
-                temp = []
-                self.call_func(temp)
+                temp.append(self.token_atual().tipo)
+                temp = self.call_func(temp)
                 if self.token_atual().tipo == 'SEMICOLON':
                     self.index_token += 1
+                    self.tabelaDeSimbolos.append(temp)
                     return temp
                 else:
                     raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
@@ -70,12 +82,20 @@ class Parser:
                 raise Exception(f"Erro de sintaxe: Esperado 'FUNC' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
         if self.token_atual().tipo == 'PRINT':
-            self.print_statement()
-            return True
+            temp = []
+            temp.append(self.indexEscopoAtual)
+            temp.append(self.token_atual().linha)
+            temp.append(self.token_atual().tipo)
+            self.print_statement(temp)
+            return temp
 
         if self.token_atual().tipo == 'IF':
-            self.if_stmt()
-            return True
+            temp = []
+            temp.append(self.indexEscopoAtual)
+            temp.append(self.token_atual().linha)
+            temp.append(self.token_atual().tipo)
+            self.if_stmt(temp)
+            return temp
         
         if self.token_atual().tipo == 'WHILE':
             self.while_()
@@ -92,20 +112,33 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Não esperado'{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
         
-    def if_stmt(self):
+    def if_stmt(self, temp):
         self.index_token += 1
         if self.token_atual().tipo == 'LPAREN':
-            self.expression()
+            tempExpression = []
+            tempExpression = self.expression(tempExpression)
+            temp.append(tempExpression)
             if self.token_atual().tipo == 'RPAREN':
                 self.index_token += 1
                 if self.token_atual().tipo == 'LBRACE':
                     self.index_token += 1
+                    tempBlock = []
+                    self.indexEscopoAtual += 1
                     while self.token_atual().tipo != 'RBRACE':
-                        self.block()
+                        tempBlock.append(self.block())
+                    temp.append(tempBlock)
                     if self.token_atual().tipo == 'RBRACE':
+                        self.indexEscopoAtual -= 1
                         self.index_token += 1
                         if self.token_atual().tipo == 'ELSE':
-                            self.else_part()
+                            self.indexEscopoAtual += 1
+                            tempElse = []
+                            tempElse.append(self.indexEscopoAtual)
+                            tempElse.append(self.token_atual().linha)
+                            tempElse.append(self.token_atual().tipo)
+                            tempElse = self.else_part(tempElse)
+                            temp.append(tempElse)
+                            self.tabelaDeSimbolos.append(temp)
                     else:
                         raise Exception(f"Erro de sintaxe: Esperado ""}"" ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                 else:
@@ -115,15 +148,18 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
-    def else_part(self):
+    def else_part(self, tempElse):
         self.index_token += 1
         if self.token_atual().tipo == 'LBRACE':
             self.index_token += 1
+            tempBlock = []
             while self.token_atual().tipo != 'RBRACE':
-                self.block()
+                tempBlock.append(self.block())
+            tempElse.append(tempBlock)
             if self.token_atual().tipo == 'RBRACE':
                 self.index_token += 1
-                return True
+                self.indexEscopoAtual -= 1
+                return tempElse
             else:
                 raise Exception(f"Erro de sintaxe: Esperado '}}' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
         else:
@@ -171,13 +207,15 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'CONTINUE' ou 'BREAK' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
-    def print_statement(self):
+    def print_statement(self, temp):
         self.index_token += 1
         if self.token_atual().tipo == 'LPAREN':
-            self.params_print()
+            tempParams = []
+            temp.append(self.params_print(tempParams))
             if self.token_atual().tipo == 'RPAREN':
                 self.index_token += 1
                 if self.token_atual().tipo == 'SEMICOLON':
+                    self.tabelaDeSimbolos.append(temp)
                     self.index_token += 1
                     return
                 else:
@@ -187,17 +225,19 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
-    def params_print(self):
+    def params_print(self, tempParams):
         self.index_token += 1
         if self.token_atual().tipo == 'ID'or self.token_atual().tipo == 'NUM' or self.token_atual().tipo == 'BOOLEAN':
+            tempParams.append(self.token_atual().lexema)
             if self.token_atual().tipo == 'ADD' or self.token_atual().tipo == 'SUB' or self.token_atual().tipo == 'MULT'or self.token_atual().tipo == 'DIV':
-                self.call_op()
-                return True
+                tempParams.append(self.token_atual().lexema)
+                self.call_op(tempParams)
+                return tempParams
             self.index_token += 1
             if self.token_atual().tipo == 'COMMA':
-                self.params_print()
-                return True
-            return True
+                self.params_print(tempParams)
+                return tempParams
+            return tempParams
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID', 'NUM' ou 'BOOLEAN' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
@@ -249,19 +289,23 @@ class Parser:
                                     self.index_token += 1
                                     if self.token_atual().tipo == 'LBRACE':
                                         self.index_token += 1
+                                        self.indexEscopoAtual += 1
                                         tempBlock = []
                                         while self.token_atual().tipo != 'RETURN':
                                             tempBlock.append(self.block())
-                                            temp.append(tempBlock)
-                                            tempReturn = []
+                                        temp.append(tempBlock)
+                                        tempReturn = []
                                         if self.token_atual().tipo == 'RETURN':
+                                            tempReturn.append(self.indexEscopoAtual)
+                                            tempReturn.append(self.token_atual().tipo)
                                             tempReturnParams = []
                                             tempReturnParams = self.return_(tempReturnParams)
                                             tempReturn.append(tempReturnParams)
                                             temp.append(tempReturn)
                                             if self.token_atual().tipo == 'RBRACE':
                                                 self.index_token += 1
-                                                return 
+                                                self.indexEscopoAtual -= 1
+                                                self.tabelaDeSimbolos.append(temp)
                                             else:
                                                 raise Exception(f"Erro de sintaxe: Esperado ""}"" ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                                         else:
@@ -271,16 +315,27 @@ class Parser:
                                 else:
                                     raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                             elif self.token_atual().tipo == 'RPAREN':
+                                temp.append(tempParen)
                                 self.index_token += 1
                                 if self.token_atual().tipo == 'LBRACE':
                                     self.index_token += 1
+                                    self.indexEscopoAtual += 1
+                                    tempBlock = []
                                     while self.token_atual().tipo != 'RETURN':
-                                        self.block()
+                                        tempBlock.append(self.block())
+                                    temp.append(tempBlock)
+                                    tempReturn = []
                                     if self.token_atual().tipo == 'RETURN':
-                                        self.return_()
+                                        tempReturn.append(self.indexEscopoAtual)
+                                        tempReturn.append(self.token_atual().tipo)
+                                        tempReturnParams = []
+                                        tempReturnParams = self.return_(tempReturnParams)
+                                        tempReturn.append(tempReturnParams)
+                                        temp.append(tempReturn)
                                         if self.token_atual().tipo == 'RBRACE':
+                                            self.indexEscopoAtual -= 1
                                             self.index_token += 1
-                                            return 
+                                            self.tabelaDeSimbolos.append(temp)
                                         else:
                                             raise Exception(f"Erro de sintaxe: Esperado {'}'} ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                                     else:
@@ -291,21 +346,31 @@ class Parser:
                                     raise Exception(f"Erro de sintaxe: Esperado ',' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                     else:
                         if self.token_atual().tipo == 'RPAREN':
+                            temp.append(tempParen)
                             self.index_token += 1
                             if self.token_atual().tipo == 'LBRACE':
+                                tempBlock = []
+                                self.indexEscopoAtual += 1
                                 self.index_token += 1
                                 while self.token_atual().tipo != 'RETURN':
-                                    self.block()
+                                    tempBlock.append(self.block())
+                                temp.append(tempBlock)
+                                tempReturn = []
                                 if self.token_atual().tipo == 'RETURN':
-                                    self.return_()
+                                    tempReturn.append(self.indexEscopoAtual)
+                                    tempReturn.append(self.token_atual().tipo)
+                                    tempReturnParams = []
+                                    tempReturnParams = self.return_(tempReturnParams)
+                                    tempReturn.append(tempReturnParams)
+                                    temp.append(tempReturn)
                                     if self.token_atual().tipo == 'RBRACE':
+                                        self.indexEscopoAtual -= 1
                                         self.index_token += 1
-                                        return True
+                                        self.tabelaDeSimbolos.append(temp) 
                                     else:
                                         raise Exception(f"Erro de sintaxe: Esperado ""}"" ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                                 else:
                                     raise Exception(f"Erro de sintaxe: Esperado 'RETURN' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
-                            
                 else:
                     raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
             else:
@@ -313,63 +378,85 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'INT' ou 'BOOLEAN' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
-    def declaration_proc(self):
+    def declaration_proc(self, temp):
         self.index_token += 1
         if self.token_atual().tipo == 'ID':
+            temp.append(self.token_atual().lexema)
+            self.index_token += 1
+            if self.token_atual().tipo == 'LPAREN':
+                tempParen = []
                 self.index_token += 1
-                if self.token_atual().tipo == 'LPAREN':
+                if self.token_atual().tipo == 'INT' or self.token_atual().tipo == 'BOOL':
+                    tempParametroAtual = []
+                    tempParametroAtual.append(self.token_atual().tipo)
                     self.index_token += 1
-                    if self.token_atual().tipo == 'INT' or self.token_atual().tipo == 'BOOL':
+                    if self.token_atual().tipo == 'ID' or self.token_atual().lexema == 'True' or self.token_atual().lexema == 'False':
+                        tempParametroAtual.append(self.token_atual().lexema)
+                        tempParen.append(tempParametroAtual)
                         self.index_token += 1
-                        if self.token_atual().tipo == 'ID' or self.token_atual().lexema == 'True' or self.token_atual().lexema == 'False':
-                            self.index_token += 1
-                            if self.token_atual().tipo == 'COMMA':
-                                self.params()
-                                if self.token_atual().tipo == 'RPAREN':
-                                    self.index_token += 1
-                                    if self.token_atual().tipo == 'LBRACE':
-                                        self.index_token += 1
-                                        self.block()
-                                        if self.token_atual().tipo == 'RBRACE':
-                                            self.index_token += 1
-                                            return True
-                                        else:
-                                            raise Exception(f"Erro de sintaxe: Esperado {'}'} ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
-                                    else:
-                                        raise Exception(f"Erro de sintaxe: Esperado {'{'} ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
-                                else:
-                                    raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
-                            elif self.token_atual().tipo == 'RPAREN':
+                        if self.token_atual().tipo == 'COMMA':
+                            tempParen.append(self.params(tempParen))
+                            tempParen.pop()
+                            temp.append(tempParen)
+                            if self.token_atual().tipo == 'RPAREN':
                                 self.index_token += 1
                                 if self.token_atual().tipo == 'LBRACE':
+                                    tempBlock = []
+                                    self.indexEscopoAtual += 1
                                     self.index_token += 1
-                                    self.block()
+                                    tempBlock.append(self.block())
+                                    temp.append(tempBlock)
                                     if self.token_atual().tipo == 'RBRACE':
+                                        self.indexEscopoAtual -= 1
                                         self.index_token += 1
-                                        return True
+                                        return temp
                                     else:
                                         raise Exception(f"Erro de sintaxe: Esperado {'}'} ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                                 else:
                                     raise Exception(f"Erro de sintaxe: Esperado {'{'} ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                             else:
                                 raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
-                        else:
-                                raise Exception(f"Erro de sintaxe: Esperado ',' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
-                    else:
-                        if self.token_atual().tipo == 'RPAREN':
+                        elif self.token_atual().tipo == 'RPAREN':
+                            temp.append(tempParen)
                             self.index_token += 1
                             if self.token_atual().tipo == 'LBRACE':
+                                tempBlock = []
                                 self.index_token += 1
-                                self.block()
+                                self.indexEscopoAtual += 1
+                                tempBlock.append(self.block())
+                                temp.append(tempBlock)
                                 if self.token_atual().tipo == 'RBRACE':
                                     self.index_token += 1
-                                    return True
+                                    self.indexEscopoAtual -= 1
+                                    return temp
                                 else:
                                     raise Exception(f"Erro de sintaxe: Esperado {'}'} ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                             else:
-                                raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
+                                raise Exception(f"Erro de sintaxe: Esperado {'{'} ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                         else:
-                            raise Exception(f"Erro de sintaxe: Esperado 'ID' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
+                            raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
+                    else:
+                            raise Exception(f"Erro de sintaxe: Esperado ',' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
+                else:
+                    if self.token_atual().tipo == 'RPAREN':
+                        temp.append(tempParen)
+                        self.index_token += 1
+                        if self.token_atual().tipo == 'LBRACE':
+                            tempBlock = []
+                            self.index_token += 1
+                            self.indexEscopoAtual += 1
+                            tempBlock.append(self.block())
+                            temp.append(tempBlock)
+                            if self.token_atual().tipo == 'RBRACE':
+                                self.indexEscopoAtual -= 1
+                                self.index_token += 1
+                                return temp
+                            else:
+                                raise Exception(f"Erro de sintaxe: Esperado {'}'} ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
+                        else:
+                            raise Exception(f"Erro de sintaxe: Esperado '(' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
+                    else:
+                        raise Exception(f"Erro de sintaxe: Esperado 'ID' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
     def call_var(self):
         self.index_token += 1
@@ -455,15 +542,18 @@ class Parser:
                         tempParams.pop()
                         if self.token_atual().tipo == 'RPAREN':
                             self.index_token += 1
+                            temp.append(tempParams)
                             return temp
                         else:
                             raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
                     elif self.token_atual().tipo == 'RPAREN':
                         self.index_token += 1
+                        temp.append(tempParams)
                         return temp
                     else:
                         raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
-                else: 
+                else:
+                    temp.append(tempParams)
                     if self.token_atual().tipo == 'RPAREN':
                         self.index_token += 1
                         return temp
@@ -474,31 +564,38 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
 
-    def call_proc(self):
+    def call_proc(self,temp):
         self.index_token += 1
         if self.token_atual().tipo == 'ID':
-            temp = []
+            temp.append(self.token_atual().lexema)
             self.index_token += 1
             if self.token_atual().tipo == 'LPAREN':
+                tempParams = []
                 self.index_token += 1
                 if self.token_atual().tipo == 'ID' or self.token_atual().lexema == 'TRUE' or self.token_atual().lexema == 'False':
+                    tempParams.append(self.token_atual().lexema)
                     self.index_token += 1
                     if self.token_atual().tipo == 'COMMA':
-                        self.params_call_func(temp)
+                        tempParams.append(self.params_call_func(tempParams))
+                        tempParams.pop()
+                        temp.append(tempParams)
                         if self.token_atual().tipo == 'RPAREN':
                             self.index_token += 1
-                            return
+                            temp.append(tempParams)
+                            return temp
                         else:
                             raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
                     elif self.token_atual().tipo == 'RPAREN':
                         self.index_token += 1
-                        return
+                        temp.append(tempParams)
+                        return temp
                     else:
                         raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
                 else:
+                    temp.append(tempParams)
                     if self.token_atual().tipo == 'RPAREN':
                         self.index_token += 1
-                        return
+                        return temp
                     else:
                         raise Exception(f"Erro de sintaxe: Esperado ')' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
             else:
@@ -510,15 +607,18 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
     
-    def expression(self):
+    def expression(self, tempExpression):
         self.index_token += 1
         if self.token_atual().tipo == 'ID' or self.token_atual().tipo == 'NUM':
+            tempExpression.append(self.token_atual().lexema)
             self.index_token += 1
             if self.token_atual().tipo == 'EQUAL' or self.token_atual().tipo == 'DIFF'or self.token_atual().tipo == 'LESSEQUAL' or self.token_atual().tipo == 'GREATEREQUAL':
+                tempExpression.append(self.token_atual().lexema)
                 self.index_token += 1
                 if self.token_atual().tipo == 'ID' or self.token_atual().tipo == 'NUM':
+                    tempExpression.append(self.token_atual().lexema)
                     self.index_token += 1
-                    return
+                    return tempExpression
                 else:
                     raise Exception(f"Erro de sintaxe: Esperado 'ID' ou 'NUM' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
             else:

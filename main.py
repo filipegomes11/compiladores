@@ -13,6 +13,7 @@ def main():
     parser.parse()
 
     print(parser.tokens)
+    print('\n')
     print(parser.tabelaDeSimbolos)
     
 
