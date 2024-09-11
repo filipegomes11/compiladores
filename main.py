@@ -10,9 +10,10 @@ def main():
     tokens = lexer.analisar()
 
     parser = Parser(tokens)
-    parser.parse()
-
     print(parser.tokens)
+    parser.parse()
+    parser.Semantica()
+    
     print('\n')
     print(parser.tabelaDeSimbolos)
     

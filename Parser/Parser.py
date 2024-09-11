@@ -8,7 +8,6 @@ class Parser:
     def token_atual(self):
         return self.tokens[self.index_token]
 
-
     def parse(self):
         self.indexEscopoAtual += 1
         return self.programa()
@@ -98,11 +97,19 @@ class Parser:
             return temp
         
         if self.token_atual().tipo == 'WHILE':
-            self.while_()
-            return True
+            temp = []
+            temp.append(self.indexEscopoAtual)
+            temp.append(self.token_atual().linha)
+            temp.append(self.token_atual().tipo)
+            self.while_(temp)
+            return temp
         
         if self.token_atual().tipo == 'ID':
-            self.call_var()
+            temp = []
+            temp.append(self.indexEscopoAtual)
+            temp.append(self.token_atual().linha)
+            temp.append(self.token_atual().tipo)
+            self.call_var(temp)
             return True
         
         if self.token_atual().tipo == 'BREAK' or self.token_atual().tipo == 'CONTINUE':
@@ -165,19 +172,26 @@ class Parser:
         else:
             raise Exception(f"Erro de sintaxe: Esperado '{{' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
             
-    def while_(self):
+    def while_(self, temp):
         self.index_token += 1
         if self.token_atual().tipo == 'LPAREN':
-            self.expression()
+            tempExpression = []
+            tempExpression = self.expression(tempExpression)
+            temp.append(tempExpression)
             if self.token_atual().tipo == 'RPAREN':
                 self.index_token += 1
                 if self.token_atual().tipo == 'LBRACE':
                     self.index_token += 1
+                    TempBlock = []
+                    self.indexEscopoAtual += 1
                     while self.token_atual().tipo != 'RBRACE':
-                        self.block()
+                        TempBlock.append(self.block())
+                    temp.append(TempBlock)
                     if self.token_atual().tipo == 'RBRACE':
                         self.index_token += 1
-                        return True
+                        self.indexEscopoAtual -= 1
+                        self.tabelaDeSimbolos.append(temp)
+                        return temp
                     else:
                         raise Exception(f"Erro de sintaxe: Esperado ""}"" ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
                 else:
@@ -458,14 +472,18 @@ class Parser:
                     else:
                         raise Exception(f"Erro de sintaxe: Esperado 'ID' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
 
-    def call_var(self):
+    def call_var(self, temp):
+        temp.append(self.token_atual().lexema)
         self.index_token += 1
         if self.token_atual().tipo == 'ATB':
+            temp.append(self.token_atual().lexema)
             self.index_token += 1
             if self.token_atual().tipo == 'NUM'or self.token_atual().tipo == 'BOOLEAN' or self.token_atual().tipo == 'ID':
+                temp.append(self.token_atual().lexema)
                 self.index_token += 1
                 if self.token_atual().tipo == 'SEMICOLON':
                     self.index_token += 1
+                    self.tabelaDeSimbolos.append(temp)
                     return True
                 else:
                     raise Exception(f"Erro de sintaxe: Esperado ';' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
@@ -522,7 +540,7 @@ class Parser:
                 self.call_op(tempEndVar)
                 return 
             else:
-                raise Exception(f"Erro de sintaxe: Esperado número ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
+                return
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'ID', 'NUM' ou 'BOOLEAN' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}..")
         
@@ -672,5 +690,218 @@ class Parser:
                 raise Exception(f"Erro de sintaxe: Esperado 'ID', 'TRUE' ou 'FALSE' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
         else:
             raise Exception(f"Erro de sintaxe: Esperado 'INT' ou 'BOOLEAN' ao invés de '{self.token_atual().lexema}' na linha {self.token_atual().linha}.")
+
+    def buscarNaTabelaDeSimbolos(self, simbolo, indice):
+        for i in range(len(self.tabelaDeSimbolos)):
+            if self.tabelaDeSimbolos[i][indice] == simbolo:
+                return self.tabelaDeSimbolos[i]
+
+    def Semantica(self):
+        for i in range(len(self.tabelaDeSimbolos)):
+            token = self.tabelaDeSimbolos[i][2]
+            if token == 'INT' or token == 'BOOL':
+                self.declaration_var_sem(self.tabelaDeSimbolos[i])
+
+            if token == 'ID':
+                self.call_var_sem(self.tabelaDeSimbolos[i])
+
+            if token == 'IF':
+                self.expression_sem(self.tabelaDeSimbolos[i])
+            
+            if token == 'WHILE':
+                self.expression_sem(self.tabelaDeSimbolos[i])
+            
+            if token == 'CALL':
+                print('CALL')
+
+            if token == 'FUNC':
+                self.func_sem(self.tabelaDeSimbolos[i])
+            
+            if token == 'PROC':
+                print('PROC')
+            
+    def declaration_var_sem(self, indiceAtual):
+        if indiceAtual[2] == 'INT':
+            token = indiceAtual[5][0]
+
+            if token.isnumeric():
+                return True
+            
+            if token == 'CALL':
+                return
+            #     func = self.buscarNaTabelaDeSimbolos(indiceAtual[5][2], 4)
+            #     if func != None:
+            #         if func[0] <= indiceAtual[0] and func[1] <= indiceAtual[1]:
+            #             return True
+            #         else:
+            #             raise Exception(f"Erro semântico: Função não declarada na linha {indiceAtual[1]}aa.")
+            #     else:
+            #         raise Exception(f"Erro semântico: Função não declarada na linha {indiceAtual[1]}.bb")
+            
+            
+            if token.isalpha() and token != 'True' and token != 'False':
+                var = self.buscarNaTabelaDeSimbolos(indiceAtual[5][0], 3)
+                if var != None:
+                    if(var[0] <= indiceAtual[0] and var[1] <= indiceAtual[1]):
+                        if(var[2] == 'INT'):
+                            return True
+                        else:
+                            raise Exception(f"Erro semântico: Atribuição de tipo diferente na linha {indiceAtual[1]}.")
+                    else:
+                        raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+                else:
+                    raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+            
+            if indiceAtual[2] == 'BOOL':
+                token = indiceAtual[5][0]
+
+                if token == 'True' or token == 'False':
+                    return True
+                
+                if token.isnumeric():
+                    raise Exception(f"Erro semântico: Atribuição de tipo diferente na linha {indiceAtual[1]}.")
+                
+                if token.isalpha() and token != 'True' and token != 'False':
+                    var = self.buscarNaTabelaDeSimbolos(indiceAtual[5][0], 3)
+                    if var != None:
+                        if(var[0] <= indiceAtual[0] and var[1] <= indiceAtual[1]):
+                            if(var[2] == 'BOOL'):
+                                if var[5][0] == 'True' and var[5][0] == 'False':
+                                    return True
+                                else:
+                                    raise Exception(f"Erro semântico: Atribuição de tipo diferente na linha {indiceAtual[1]}.")
+                            else:
+                                raise Exception(f"Erro semântico: Atribuição de tipo diferente na linha {indiceAtual[1]}.")
+                        else:
+                            raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+                    else:
+                        raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+            
+            else:
+                return 
+                # raise Exception(f"Erro semântico: Atribuição de tipo diferente na linha {indiceAtual[1]}.")
+
+    def call_var_sem(self, indiceAtual):
+        status = False
+        var_atribuida = self.buscarNaTabelaDeSimbolos(indiceAtual[3], 3)
+
+        if var_atribuida:
+            if var_atribuida[0] <= indiceAtual[0] and var_atribuida[1] <= indiceAtual[1]:
+                var_valor_atribuido = self.buscarNaTabelaDeSimbolos(indiceAtual[5], 3)
+
+                if var_valor_atribuido:
+                    if var_valor_atribuido[2] == var_atribuida[2]:
+                        status = True
+                    else:
+                        raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                else:
+                    valor_atribuido = indiceAtual[5]
+                    tipo_var_atribuida = var_atribuida[2]
+
+                    if tipo_var_atribuida == "INT" and valor_atribuido.isnumeric():
+                        status = True
+                    elif tipo_var_atribuida == "BOOL" and (valor_atribuido == "true" or valor_atribuido == "false"):
+                        status = True
+                    else:
+                        raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+
+        if not status:
+            raise Exception(f"Erro Semântico: Variável '{indiceAtual[3]}' não declarada ou tipos incompatíveis na linha {indiceAtual[1]}.")
+
+    def expression_sem(self, indiceAtual):
+        param1 = self.buscarNaTabelaDeSimbolos(indiceAtual[3][0], 3)
+        param2 = self.buscarNaTabelaDeSimbolos(indiceAtual[3][2], 3)
+        if indiceAtual[3][0].isnumeric() and indiceAtual[3][2].isnumeric():
+            return True
         
-    
+        if indiceAtual[3][0].isalpha() and indiceAtual[3][2].isalpha():
+            if param1 != None and param2 != None:
+                if param1[2] == 'INT' and param2[2] == 'INT':
+                    if param1[0] <= indiceAtual[0] and param1[1] <= indiceAtual[1] and param2[0] <= indiceAtual[0] and param2[1] <= indiceAtual[1]:
+                        return True
+                elif param1[2] == 'BOOL' and param2[2] == 'BOOL':
+                    if param1[0] <= indiceAtual[0] and param1[1] <= indiceAtual[1] and param2[0] <= indiceAtual[0] and param2[1] <= indiceAtual[1]:
+                        if indiceAtual[3][1] == '==' or indiceAtual[3][1] == '!=':
+                            return True
+                elif param1[2] == 'INT' and param2[2] != 'INT':
+                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                elif param1[2] != 'INT' and param2[2] == 'INT':
+                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                elif param1[2] == 'BOOL' and param2[2] != 'BOOL':
+                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                elif param1[2] != 'BOOL' and param2[2] == 'BOOL':
+                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                elif param1[2] == 'INT' and param2[2] == 'BOOL':
+                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                elif param1[2] == 'BOOL' and param2[2] == 'INT':
+                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+            else:
+                raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+        
+        if indiceAtual[3][0].isnumeric() and indiceAtual[3][2].isalpha():
+            if param2 != None:
+                if param2[2] != 'INT':
+                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                else:
+                    if param1[0] <= indiceAtual[0]:
+                        return True
+                    else:
+                        raise Exception(f"Erro semântico: Variável não declarada no escopo da função.")
+            else:
+                raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+            
+        if indiceAtual[3][0].isalpha() and indiceAtual[3][2].isnumeric():
+            if param1 != None:
+                if param1[2] != 'INT':
+                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                else:
+                    if param1[0] <= indiceAtual[0]:
+                        return True
+                    else:
+                        raise Exception(f"Erro semântico: Variável não declarada no escopo da função.")
+            else:
+                raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+
+        else:
+            raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                
+    def func_sem(self, indiceAtual):
+        if indiceAtual[3] == 'INT':
+            if indiceAtual[7][2][0].isnumeric():
+                return True
+            
+            if indiceAtual[7][2][0].isalpha():
+                return_type = self.buscarNaTabelaDeSimbolos(indiceAtual[7][2][0], 3)
+                if return_type[0] == indiceAtual[0] + 1:
+                    if return_type != None:
+                        if return_type[2] == 'INT':
+                            return True
+                        else:
+                            raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                    else:
+                        raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+                else:
+                    raise Exception(f"Erro semântico: Variável não declarada no escopo da funçao.")
+
+        if indiceAtual[3] == 'BOOL':
+            if indiceAtual[7][2][0] == 'True' or indiceAtual[7][2][0] == 'False':
+                return True
+            
+            if indiceAtual[7][2][0].isnumeric():
+                raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+            
+            if indiceAtual[7][2][0].isalpha():
+                return_type = self.buscarNaTabelaDeSimbolos(indiceAtual[7][2][0], 3)
+                if return_type[0] == indiceAtual[0] + 1:
+                    if return_type != None:
+                        if return_type[2] == 'BOOL':
+                            return True
+                        else:
+                            raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                    else:
+                        raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
+                else:
+                    raise Exception(f"Erro semântico: Variável não declarada no escopo da funçao.")
+        
+        else:
+            raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
