@@ -110,7 +110,7 @@ class Parser:
             temp.append(self.token_atual().linha)
             temp.append(self.token_atual().tipo)
             self.call_var(temp)
-            return True
+            return temp
         
         if self.token_atual().tipo == 'BREAK' or self.token_atual().tipo == 'CONTINUE':
             self.unconditional()
@@ -418,7 +418,8 @@ class Parser:
                                     tempBlock = []
                                     self.indexEscopoAtual += 1
                                     self.index_token += 1
-                                    tempBlock.append(self.block())
+                                    while self.token_atual().tipo != 'RBRACE':
+                                        tempBlock.append(self.block())
                                     temp.append(tempBlock)
                                     if self.token_atual().tipo == 'RBRACE':
                                         self.indexEscopoAtual -= 1
@@ -437,7 +438,8 @@ class Parser:
                                 tempBlock = []
                                 self.index_token += 1
                                 self.indexEscopoAtual += 1
-                                tempBlock.append(self.block())
+                                while self.token_atual().tipo != 'RBRACE':
+                                    tempBlock.append(self.block())
                                 temp.append(tempBlock)
                                 if self.token_atual().tipo == 'RBRACE':
                                     self.index_token += 1
@@ -459,7 +461,8 @@ class Parser:
                             tempBlock = []
                             self.index_token += 1
                             self.indexEscopoAtual += 1
-                            tempBlock.append(self.block())
+                            while self.token_atual().tipo != 'RBRACE':
+                                tempBlock.append(self.block())
                             temp.append(tempBlock)
                             if self.token_atual().tipo == 'RBRACE':
                                 self.indexEscopoAtual -= 1
@@ -699,6 +702,13 @@ class Parser:
     def Semantica(self):
         for i in range(len(self.tabelaDeSimbolos)):
             token = self.tabelaDeSimbolos[i][2]
+
+            if token == 'FUNC':
+                self.func_sem(self.tabelaDeSimbolos[i])
+            
+            if token == 'PROC':
+                self.proc_sem(self.tabelaDeSimbolos[i])
+
             if token == 'INT' or token == 'BOOL':
                 self.declaration_var_sem(self.tabelaDeSimbolos[i])
 
@@ -712,13 +722,14 @@ class Parser:
                 self.expression_sem(self.tabelaDeSimbolos[i])
             
             if token == 'CALL':
-                print('CALL')
+                if self.tabelaDeSimbolos[i][3] == 'FUNC':
+                    self.call_func_sem(self.tabelaDeSimbolos[i])
 
-            if token == 'FUNC':
-                self.func_sem(self.tabelaDeSimbolos[i])
-            
-            if token == 'PROC':
-                print('PROC')
+                if self.tabelaDeSimbolos[i][3] == 'PROC':
+                    self.call_proc_sem(self.tabelaDeSimbolos[i])
+
+        print("Análise semântica realizada com sucesso.")
+
             
     def declaration_var_sem(self, indiceAtual):
         if indiceAtual[2] == 'INT':
@@ -783,30 +794,62 @@ class Parser:
 
     def call_var_sem(self, indiceAtual):
         status = False
-        var_atribuida = self.buscarNaTabelaDeSimbolos(indiceAtual[3], 3)
+        for i in range(len(self.tabelaDeSimbolos)):
+            if self.tabelaDeSimbolos[i][2] == 'INT' or self.tabelaDeSimbolos[i][2] == 'BOOL':
+                print('1')
+                if self.tabelaDeSimbolos[i][3] == indiceAtual[5]:
+                    print('1.1',self.tabelaDeSimbolos[i], indiceAtual)
+                    if self.tabelaDeSimbolos[i][0] <= indiceAtual[0] and self.tabelaDeSimbolos[i][1] <= indiceAtual[1]:
+                        print('1.2')
+                        print(self.tabelaDeSimbolos[i])
+                        print('BB', indiceAtual)
+                        if self.tabelaDeSimbolos[i][2] == 'INT' and indiceAtual[5][2].isnumeric():
+                            print('2')
+                            status = True
+                            break
+                        elif self.tabelaDeSimbolos[i][2] == 'BOOL' and (indiceAtual[5][2] == 'True' or indiceAtual[5][2] == 'False'):
+                            status = True
+                            break
+                        else:
+                            raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual}.")
+                        
+            elif self.buscarParamsProc(indiceAtual):
+                status = True
+                break
 
-        if var_atribuida:
-            if var_atribuida[0] <= indiceAtual[0] and var_atribuida[1] <= indiceAtual[1]:
-                var_valor_atribuido = self.buscarNaTabelaDeSimbolos(indiceAtual[5], 3)
-
-                if var_valor_atribuido:
-                    if var_valor_atribuido[2] == var_atribuida[2]:
-                        status = True
-                    else:
-                        raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
-                else:
-                    valor_atribuido = indiceAtual[5]
-                    tipo_var_atribuida = var_atribuida[2]
-
-                    if tipo_var_atribuida == "INT" and valor_atribuido.isnumeric():
-                        status = True
-                    elif tipo_var_atribuida == "BOOL" and (valor_atribuido == "true" or valor_atribuido == "false"):
-                        status = True
-                    else:
-                        raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
-
+            elif self.buscarParamsFunc(indiceAtual):
+                status = True
+                break
+                    
+    
         if not status:
             raise Exception(f"Erro Semântico: Variável '{indiceAtual[3]}' não declarada ou tipos incompatíveis na linha {indiceAtual[1]}.")
+        
+    def buscarParamsProc(self, indiceAtual):
+        for simbolo in self.tabelaDeSimbolos:
+            if simbolo[2] == 'PROC':
+                if simbolo[4][0][1] == indiceAtual[3]:
+                    paramsProc = simbolo[4] 
+                    for param in paramsProc:
+                        if param[0] == 'INT' and indiceAtual[5].isnumeric():
+                            return True
+                        elif param[0] == 'BOOL' and indiceAtual[5] in ('True', 'False'):
+                            return True
+                    return False
+        return False
+                            
+    def buscarParamsFunc(self, indiceAtual):
+        for simbolo in self.tabelaDeSimbolos:
+            if simbolo[2] == 'FUNC':
+                if simbolo[4][0][1] == indiceAtual[3]:
+                    paramsFunc = simbolo[4]
+                    for param in paramsFunc:
+                        if param[0] == 'INT' and indiceAtual[5].isnumeric():
+                            return True
+                        elif param[0] == 'BOOL' and indiceAtual[5] in ('True', 'False'):
+                            return True
+                    return False
+        return False
 
     def expression_sem(self, indiceAtual):
         param1 = self.buscarNaTabelaDeSimbolos(indiceAtual[3][0], 3)
@@ -905,3 +948,28 @@ class Parser:
         
         else:
             raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+        
+    def proc_sem(self, indiceAtual):
+        for i in range(len(self.tabelaDeSimbolos)):
+            for j in range(len(indiceAtual[5])):
+                if self.tabelaDeSimbolos[i][2] == 'INT' or self.tabelaDeSimbolos[i][2] == 'BOOL':
+                    if indiceAtual[5][j] == self.tabelaDeSimbolos[i]:
+                        if indiceAtual[0] <= self.tabelaDeSimbolos[i][0] and indiceAtual[1] <= self.tabelaDeSimbolos[i][1]:
+                            if self.tabelaDeSimbolos[i][2] == 'INT':
+                                if indiceAtual[5][j][5][0].isnumeric():
+                                    return True
+                                else:
+                                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+                            elif self.tabelaDeSimbolos[i][2] == 'BOOL':
+                                if indiceAtual[5][j][5][0] == 'True' or indiceAtual[5][j][5][0] == 'False':
+                                    return True
+                                else:
+                                    raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
+
+
+    ##FALTANDO APENAS OS CALL                
+    def call_func_sem(self, indiceAtual):
+        return
+    
+    def call_proc_sem(self, indiceAtual):
+       return
