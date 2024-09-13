@@ -3,6 +3,7 @@ class Parser:
         self.tokens = tokens
         self.index_token = 0
         self.tabelaDeSimbolos = []
+        self.tabelaDeTresEnderecos = [] #
         self.indexEscopoAtual = -1
 
     def token_atual(self):
@@ -25,6 +26,10 @@ class Parser:
                         print("Compilado com sucesso!")
                         return
         raise Exception(f"Erro de sintaxe: '{self.token_atual().tipo}' não esperado na linha {self.token_atual().linha}.")
+
+    def tresEnderecos(self):
+        for linha in self.tabelaDeTresEnderecos:
+            print(linha)
 
     def block(self):
         if self.token_atual().tipo == 'INT' or self.token_atual().tipo == 'BOOL':
