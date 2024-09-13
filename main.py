@@ -1,7 +1,8 @@
 from Lexer.lexer import Lexer
 from Parser.Parser import Parser
+from Parser.ThreeAddressCode import ThreeAddressCode
 
-def main():
+def main():     
    
     with open('codigo.rf', 'r') as file:
         codigo_fonte = file.read()
@@ -16,6 +17,11 @@ def main():
     
     print('\n')
     print(parser.tabelaDeSimbolos)
+    print('\n')
+
+    tac = ThreeAddressCode()
+    tac.generate_code(parser.tabelaDeSimbolos)
+    tac.print_instructions()
     
 
 if __name__ == "__main__":
