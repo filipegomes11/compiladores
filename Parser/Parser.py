@@ -723,14 +723,14 @@ class Parser:
             
             if token == 'CALL':
                 if self.tabelaDeSimbolos[i][3] == 'FUNC':
-                    self.call_func_sem(self.tabelaDeSimbolos[i])
+                    self.call_func_sem(self.tabelaDeSimbolos[i], 4, self.tabelaDeSimbolos[i][0], 5, self.tabelaDeSimbolos[i][1],)
 
                 if self.tabelaDeSimbolos[i][3] == 'PROC':
-                    self.call_proc_sem(self.tabelaDeSimbolos[i])
+                    self.call_proc_sem(self.tabelaDeSimbolos[i], 5, self.tabelaDeSimbolos[i][1])
 
         print("Análise semântica realizada com sucesso.")
 
-            
+
     def declaration_var_sem(self, indiceAtual):
         if indiceAtual[2] == 'INT':
             token = indiceAtual[5][0]
@@ -796,15 +796,10 @@ class Parser:
         status = False
         for i in range(len(self.tabelaDeSimbolos)):
             if self.tabelaDeSimbolos[i][2] == 'INT' or self.tabelaDeSimbolos[i][2] == 'BOOL':
-                print('1')
                 if self.tabelaDeSimbolos[i][3] == indiceAtual[5]:
-                    print('1.1',self.tabelaDeSimbolos[i], indiceAtual)
                     if self.tabelaDeSimbolos[i][0] <= indiceAtual[0] and self.tabelaDeSimbolos[i][1] <= indiceAtual[1]:
-                        print('1.2')
                         print(self.tabelaDeSimbolos[i])
-                        print('BB', indiceAtual)
                         if self.tabelaDeSimbolos[i][2] == 'INT' and indiceAtual[5][2].isnumeric():
-                            print('2')
                             status = True
                             break
                         elif self.tabelaDeSimbolos[i][2] == 'BOOL' and (indiceAtual[5][2] == 'True' or indiceAtual[5][2] == 'False'):
@@ -965,11 +960,70 @@ class Parser:
                                     return True
                                 else:
                                     raise Exception(f"Erro semântico: Tipos incompatíveis na linha {indiceAtual[1]}.")
-
-
-    ##FALTANDO APENAS OS CALL                
-    def call_func_sem(self, indiceAtual):
-        return
+          
+    def call_func_sem(self, indiceAtual, n, escopo, m, linha):
+        flag = False
+        for k in range(len(self.tabelaDeSimbolos)):
+            if self.tabelaDeSimbolos[k][2] == "FUNC":
+                if self.tabelaDeSimbolos[k][4] == indiceAtual[n]:
+                    if self.tabelaDeSimbolos[k][0] <= escopo:
+                        flag = True
+                        self.verificarParams(self.tabelaDeSimbolos[k], indiceAtual, 5, "FUNC", m, linha, escopo)
+                        return True
+                    
+        if flag == False:
+            raise Exception("Erro Semântico: função não declarada na linha: ", indiceAtual[1])
     
-    def call_proc_sem(self, indiceAtual):
-       return
+    def call_proc_sem(self, indiceAtual, m, linha):
+        flag = False
+        for k in range(len(self.tabelaDeSimbolos)):
+            if self.tabelaDeSimbolos[k][2] == "PROC":
+                if self.tabelaDeSimbolos[k][3] == indiceAtual[4]:
+                    if self.tabelaDeSimbolos[k][0] <= indiceAtual[0]:
+                        flag = True
+                        self.verificarParams(self.tabelaDeSimbolos[k], indiceAtual, 4, "PROC", m, linha, indiceAtual[0])
+                        break
+
+        if flag == False:
+            raise Exception("Erro Semântico: procedimento não declarado na linha: ", indiceAtual[1])
+    
+    def verificarParams(self, simboloDeclaradoNaTabela, simbolo, n, tipo, m, linha, escopo):
+        flag = 0
+        if len(simboloDeclaradoNaTabela[n]) == len(simbolo[m]):
+            if len(simbolo[m]) > 0:
+                for k in range(len(simbolo[m])):
+                    for i in range(len(self.tabelaDeSimbolos)):
+                        if self.tabelaDeSimbolos[i][3] == simbolo[m][k]:
+                            if (self.tabelaDeSimbolos[i][0] <= escopo) and (self.tabelaDeSimbolos[i][1] <= linha):
+                                if (self.tabelaDeSimbolos[i][2] == "INT" or self.tabelaDeSimbolos[i][2] == "BOOL"):
+                                    flag += 1
+                                    self.comparaTipoChamadaComDeclaracao(self.tabelaDeSimbolos[i], simbolo, tipo, n)
+                                    break
+            else:
+                return True
+        else:
+            raise Exception("Erro Semântico: quantidade de parâmetros inválido na linha: ", linha)
+
+        if flag != len(simboloDeclaradoNaTabela[n]):
+            raise Exception("Erro Semântico: variável do parâmetro não declarada na linha: ", linha)
+        else:
+            return True
+        
+    def comparaTipoChamadaComDeclaracao(self, declaracaoVarNaTabela, callFuncTabela, tipo, n):
+        declaracaoFuncNaTabela = self.buscarNaTabelaDeSimbolos(tipo, 2)
+        flag = False
+       
+        for k in range(len(declaracaoFuncNaTabela[n])):
+            if declaracaoFuncNaTabela[n][k][0] == declaracaoVarNaTabela[2]:
+                flag = True
+                break
+
+            elif declaracaoVarNaTabela[2] == "ID":
+                tipoDeclaracaoDoID = self.buscarNaTabelaDeSimbolos("ID", 2)
+                varDeclarada = self.buscarNaTabelaDeSimbolos(tipoDeclaracaoDoID[3], 3)
+                if declaracaoFuncNaTabela[n][k][1] == varDeclarada[2]:
+                    flag = True
+                    break
+
+        if flag == False:
+            raise Exception("Erro Semântico: tipo do parâmetro inválido na linha: ", callFuncTabela[1])

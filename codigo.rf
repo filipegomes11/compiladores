@@ -6,22 +6,16 @@ main {
     
     int num3 = call func soma();
 
-    call func func0();
-    call func func1(a);
-    call func func2(true, b);
+    call func soma(num1);
 
-    call proc proc0();
-    call proc proc1(x);
-    call proc proc2(a, b, c);
+    call proc mudar(num2);
 
     proc mudar(int a) {
-        int a = 2003;
+        a = 2003;
     }
 
-    call proc mudar(a);
-
-    func int soma(int a, int b) {
-        int soma = a + b;
+    func int soma(int a) {
+        int soma = a + 2;
         return soma;
     }
 
