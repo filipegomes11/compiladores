@@ -739,16 +739,42 @@ class Parser:
                 return True
             
             if token == 'CALL':
-                return
-            #     func = self.buscarNaTabelaDeSimbolos(indiceAtual[5][2], 4)
-            #     if func != None:
-            #         if func[0] <= indiceAtual[0] and func[1] <= indiceAtual[1]:
-            #             return True
-            #         else:
-            #             raise Exception(f"Erro semântico: Função não declarada na linha {indiceAtual[1]}aa.")
-            #     else:
-            #         raise Exception(f"Erro semântico: Função não declarada na linha {indiceAtual[1]}.bb")
-            
+                if indiceAtual[5][1] == "FUNC":
+                    for k in range(len(self.tabelaDeSimbolos)):
+                        if self.tabelaDeSimbolos[k][2] == "FUNC":
+                            if self.tabelaDeSimbolos[k][4] == indiceAtual[5][2]:
+                                if (self.tabelaDeSimbolos[k][0] <= indiceAtual[0]) and (self.tabelaDeSimbolos[k][1] <= indiceAtual[1]):
+                                    if len(self.tabelaDeSimbolos[k][5]) == len(indiceAtual[5][3]):
+                                        for n in range(len(indiceAtual[5][3])):
+                                            varDeclaradaNaTabela = self.buscarNaTabelaDeSimbolos(indiceAtual[5][3][n], 3)
+                                            if(varDeclaradaNaTabela != None):
+                                                if (varDeclaradaNaTabela[0] <= indiceAtual[0]) and (varDeclaradaNaTabela[1] <= indiceAtual[1]):
+                                                    if (varDeclaradaNaTabela[2] == self.tabelaDeSimbolos[k][5][n][0]):
+                                                        if self.tabelaDeSimbolos[k][3] == "INT":
+                                                            return True
+                                                        else:
+                                                            raise Exception(
+                                                                "Erro Semântico: int não recebe int na linha: ", indiceAtual[1])
+                                                    else:
+                                                        raise Exception(
+                                                            "Erro Semântico: tipo de variáveis incompativéis nos parametros na linha: ", indiceAtual[1])
+                                                else:
+                                                    raise Exception(
+                                                        "Erro Semântico: variável não declarada nos parametros na linha: ", indiceAtual[1])
+               
+                                            else:
+                                                raise Exception(
+                                                    "Erro Semântico: variável não declarada nos parametros na linha: ", indiceAtual[1])
+                                    else:
+                                        raise Exception(
+                                            "Erro Semântico: quantidade de parametros inválida na linha: ", indiceAtual[1])
+                                else:
+                                    raise Exception("Erro Semântico: função não declarada na linha: ", indiceAtual[1])
+
+                            else:
+                                raise Exception("Erro Semântico: função não declarada na linha: ", indiceAtual[1])
+                else:
+                    raise Exception("Erro Semântico: variável não pode receber procedimento na linha: ", indiceAtual[1])
             
             if token.isalpha() and token != 'True' and token != 'False':
                 var = self.buscarNaTabelaDeSimbolos(indiceAtual[5][0], 3)
@@ -789,8 +815,7 @@ class Parser:
                         raise Exception(f"Erro semântico: Variável não declarada na linha {indiceAtual[1]}.")
             
             else:
-                return 
-                # raise Exception(f"Erro semântico: Atribuição de tipo diferente na linha {indiceAtual[1]}.")
+                raise Exception(f"Erro semântico: Atribuição de tipo diferente na linha {indiceAtual[1]}.")
 
     def call_var_sem(self, indiceAtual):
         status = False
