@@ -4,7 +4,7 @@ from Parser.ThreeAddressCode import ThreeAddressCode
 
 def main():     
    
-    with open('codigo.rf', 'r') as file:
+    with open('Testes/codigo.rf', 'r') as file:
         codigo_fonte = file.read()
 
     lexer = Lexer(codigo_fonte)
